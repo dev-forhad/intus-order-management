@@ -74,7 +74,7 @@ app.UseSwagger();
 // This middleware serves the Swagger documentation UI
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Login API V1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Order Management V1");
     c.RoutePrefix = "api-docs";
     c.DocumentTitle = "Order Management Service";
 });
