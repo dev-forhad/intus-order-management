@@ -1,0 +1,140 @@
+﻿@page "/order-create"
+@page "/order-create/{id:int}"
+@using BlazorFullStackCrud.Shared.Common;
+@using BlazorFullStackCrud.Shared.DTO;
+
+@inject IOrderClientService OrderClientService
+@inject NavigationManager NavigationManager
+@inject ToastService toastService
+
+@if (IsLoading)
+{
+    <div class="spinner"></div>
+}
+else
+{
+
+    <div class="border border-dark rounded p-3">
+        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>Order Information</h5>
+            <button type="button" @onclick="AddWindow" class="btn btn-sm btn-success">Add Window</button>
+        </div>
+        <EditForm Model="@Order" OnValidSubmit="@HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="container row my-3">
+                <div class="col-md-3">
+                    <label for="input1" class="form-label">Name:</label>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control" @bind-value="@Order.Name" />
+                </div>
+                <div class="col-md-3">
+                    <label for="input1" class="form-label">State:</label>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" @bind-value="@Order.State" />
+                </div>
+            </div>
+
+
+
+            @foreach (var window in Order.Windows)
+            {
+                <WindowComponent Order="Order" Window="window" OnRemoveWindow="RemoveWindow" OnAddSubElement="AddSubElement" OnRemoveSubElement="RemoveSubElement" />
+            }
+
+            <button type="submit" class="btn btn-sm btn-primary me-1">@btnText</button>
+            <button class="btn btn-sm btn-info" @onclick="() => Close()">Close</button>
+        </EditForm>
+    </div>
+}
+
+
+
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+    bool IsLoading = true;
+    private OrderDTO Order { get; set; } = new OrderDTO();
+
+    string btnText = string.Empty;
+    bool showConfirmationDialog = false;
+    private DataEnumType dataEnumType;
+ 
+    protected override async Task OnInitializedAsync()
+    {
+        btnText = Id == null ? "Save Order" : "Update Order";
+    }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != null)
+        {
+            Order = await OrderClientService.GetSingleOrders((int)Id);
+        }
+        IsLoading = false;
+    }
+
+    private void AddWindow()
+    {
+        var window = new WindowDTO();
+        Order.Windows.Add(window);
+    }
+
+    private void RemoveWindow(WindowDTO window)
+    {
+        Order.Windows.Remove(window);
+    }
+
+    private void AddSubElement(SubElementDTO subElement)
+    {
+        StateHasChanged();
+    }
+
+    private void RemoveSubElement(SubElementDTO subElement)
+    {
+        StateHasChanged();
+    }
+
+    private async void HandleValidSubmit()
+    {
+        IsLoading = true;
+        if (Id == null)
+        {
+            try
+            {
+                await OrderClientService.CreateOrder(Order);
+                toastService.ShowToast("Order created successfully", ToastLevel.Success);
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowToast(ex.Message, ToastLevel.Error);
+            }
+        }
+        else
+        {
+            try
+            {
+                await OrderClientService.UpdateOrder(Order);
+                toastService.ShowToast("Order updated sccessfully", ToastLevel.Info);
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowToast(ex.Message, ToastLevel.Error);
+            }
+        }
+        IsLoading = false;
+    }
+
+    async Task Close()
+    {
+        IsLoading = true;
+        await OrderClientService.GoOrderIndex("order-index");
+        IsLoading = false;
+    }
+
+}

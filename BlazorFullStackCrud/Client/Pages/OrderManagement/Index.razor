@@ -1,0 +1,170 @@
+﻿@page "/order-index"
+@using System.Collections.Generic
+@using BlazorFullStackCrud.Shared.Common
+@using BlazorFullStackCrud.Shared.DTO
+@inject IOrderClientService OrderClientService
+@inject NavigationManager NavigationManager
+@inject ToastService toastService
+
+<PageTitle>Order</PageTitle>
+
+
+@if(IsLoading){
+    <div class="spinner"></div>
+}
+else{
+    @if (ShowConfirmationOrder)
+    {
+        <div class="modal" tabindex="-1" role="dialog" style="display: block; background-color: rgba(0, 0, 0, 0.5)">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirmation</h5>
+                        <button type="button" class="close" @onclick="HideConfirmationOrderDialog">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete this order?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="HideConfirmationOrderDialog">Cancel</button>
+                        <button type="button" class="btn btn-danger" @onclick="(() => DeleteOrder(OrderToDelete))">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+<div style="margin-bottom:5px;">
+    <button class="btn btn-sm btn-primary" @onclick="CreateNewOrder">Create New Order</button>
+</div>
+
+<table class="table table-responsive table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>State</th>
+            <th>Windows</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var Model in OrderClientService.Orders)
+        {
+            <tr>
+                <td>@Model.Id</td>
+                <td>@Model.Name</td>
+                <td>@Model.State</td>
+                <td>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Quantity of Windows</th>
+                                <th>Total Sub-Elements</th>
+                                <th>Sub-Elements</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var window in Model.Windows)
+                            {
+                                <tr>
+                                    <td>@window.Id</td>
+                                    <td>@window.Name</td>
+                                    <td>@window.QuantityOfWindows</td>
+                                    <td>@window.TotalSubElements</td>
+                                    <td>
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Element</th>
+                                                    <th>Type</th>
+                                                    <th>Width</th>
+                                                    <th>Height</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var subElement in window.SubElements)
+                                                {
+                                                    <tr>
+                                                        <td>@subElement.Id</td>
+                                                        <td>@subElement.Element</td>
+                                                        <td>@subElement.Type</td>
+                                                        <td>@subElement.Width</td>
+                                                        <td>@subElement.Height</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </td>
+
+                <td>
+                    <button class="btn btn-sm btn-primary" @onclick="(() => ShowOrder(Model.Id))"><i class="oi oi-pencil"></i></button>
+                     <button class="btn btn-sm btn-danger" @onclick="(() => ShowConfirmationOrderDialog(Model))"><i class="oi oi-delete"></i></button>
+                </td>
+            </tr>
+        }
+
+    </tbody>
+</table>
+}
+
+
+
+@code {
+    bool IsLoading = true;
+    bool ShowConfirmationOrder  = false;
+    private OrderDTO OrderToDelete { get; set; }
+    List<OrderDTO> OrderList = new List<OrderDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        OrderList = await OrderClientService.GetOrders();
+        IsLoading = false;
+    }
+
+    void ShowOrder(int id)
+    {
+        NavigationManager.NavigateTo($"order-create/{id}");
+    }
+
+    void CreateNewOrder()
+    {
+        NavigationManager.NavigateTo("/order-create");
+    }
+
+    private void ShowConfirmationOrderDialog(OrderDTO model)
+    {
+        OrderToDelete = model;
+        ShowConfirmationOrder = true;
+    }
+
+    private void HideConfirmationOrderDialog()
+    {
+        ShowConfirmationOrder = false;
+    }
+
+    async Task DeleteOrder(OrderDTO model)
+    {
+        try
+        {
+            HideConfirmationOrderDialog();
+            await OrderClientService.DeleteOrder(model.Id);
+            OrderList.Remove(model);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowToast(ex.Message, ToastLevel.Error);
+        }
+    }
+}
