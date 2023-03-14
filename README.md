@@ -18,6 +18,9 @@ dotnet build
 cd BlazorFullStackCrud/Server
 dotnet run
 
+## Show Swagger ui
+https://localhost:*PORT/api-docs/
+
 ## Features
 - Add/Update/Delete Order
 - Add/Update/Delete Window
