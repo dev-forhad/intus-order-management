@@ -28,6 +28,8 @@ dotnet run
 - DAL
 - BLL
 - Service / Repository Pattern
+- Dependency Injection
+- Swagger
 
 
 
